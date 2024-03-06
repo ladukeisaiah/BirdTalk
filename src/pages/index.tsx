@@ -22,7 +22,7 @@ export default function Home() {
       <header>
         <UserButton />
       </header>
-      <div>Your home page's content can go here.</div>
+      <div>Your home page&apos;s content can go here.</div>
         <SignIn path="/sign-in" routing="path" signUpUrl="/sign-up" />
         <div>{data?.map((post) => (
         <div key={post.id}>{post.content}</div>
