@@ -5,7 +5,10 @@ import Link from "next/link";
 import { api } from "~/utils/api";
 
 export default function Home() {
-  const hello = api.post.hello.useQuery({ text: "from tRPC" });
+  // const hello = api.post.hello.useQuery({ text: "from tRPC" });
+
+  const {data} = api.post.getAll.useQuery();
+  console.log(data);
 
   return (
     <>
@@ -21,6 +24,10 @@ export default function Home() {
       </header>
       <div>Your home page's content can go here.</div>
         <SignIn path="/sign-in" routing="path" signUpUrl="/sign-up" />
+        <div>{data?.map((post) => (
+        <div key={post.id}>{post.content}</div>
+        ))}
+        </div>
       </main>
     </>
   );
