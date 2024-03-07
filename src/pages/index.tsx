@@ -6,6 +6,7 @@ import dayjs from "dayjs";
 import relativeTime from "dayjs/plugin/relativeTime";
 import { RouterOutputs, api } from "~/utils/api";
 import Image from "next/image";
+import { LoadingPage } from "~/components/loading";
 
 dayjs.extend(relativeTime);
 
@@ -33,6 +34,7 @@ const PostView = (props: PostWithUser) => {
   const defaultImageUrl = "/public/blank_profile_image.pdf";
 
   return (
+
     <div key={post.id} className="flex border-b border-slate-400 p-4 gap-3">
       <Image 
       src={author?.profileImageUrl || defaultImageUrl} 
@@ -49,18 +51,36 @@ const PostView = (props: PostWithUser) => {
       <span>{post.content}</span>
       </div>
     </div>
+
   );
 };
 
-export default function Home() {
-  // const hello = api.post.hello.useQuery({ text: "from tRPC" });
-  const user = useUser();
+const Feed = () => {
+  const { data, isLoading: postsLoading } = api.post.getAll.useQuery();
 
-  const { data, isLoading } = api.post.getAll.useQuery();
-  
-  if (isLoading) return <div>Loading...</div>
+  if (postsLoading) return <LoadingPage />
 
   if (!data) return <div>Something went wrong</div>
+
+  return (
+    <div className="flex flex-col">
+            {[...data, ...data]?.map((fullPost) => (
+          <PostView {...fullPost} key={fullPost.post.id}/>
+          ))}
+          </div>
+  );
+}
+
+export default function Home() {
+  // const hello = api.post.hello.useQuery({ text: "from tRPC" });
+  const {user, isLoaded: userLoaded}  = useUser();
+
+  // start fetching asap
+  api.post.getAll.useQuery();
+
+  // This will return empty div if user isn't loaded yet
+  if (!userLoaded) return <div />;
+
 
 
   return (
@@ -81,11 +101,7 @@ export default function Home() {
             <input placeholder="Type some emojis!" className="min-w-0 flex-grow bg-transparent outline-none" style={{ minWidth: '150px' }}/>
             </div>
         </header>
-          <div className="flex flex-col">
-            {[...data, ...data]?.map((fullPost) => (
-          <PostView {...fullPost} key={fullPost.post.id}/>
-          ))}
-          </div>
+        <Feed />
         </div>
       </main>
     </>
