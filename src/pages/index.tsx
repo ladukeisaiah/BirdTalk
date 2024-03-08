@@ -12,18 +12,21 @@ dayjs.extend(relativeTime);
 
 const CreatePostWizard = () => {
   const { user } = useUser();
-
+ 
   if (!user) return null;
 
-  return (<div className="flex gap-3 bg-red-200">
-    <Image 
+  return (
+    <>
+    {/* <Image 
       src={user.imageUrl} 
       className="w-14 h-14 rounded-full" 
       alt="Profile Picture"
       width={56}
-      height={56} />
-    <input placeholder="Type some emojis!" className="grow bg-transparent"/>
-  </div>
+      height={56} /> */}
+      <div className="flex flex-grow">
+        <input placeholder="Type some emojis!" className="min-w-0 flex-grow bg-transparent outline-none" style={{ minWidth: '150px' }}/>
+      </div>
+      </>
   );
 };
 
@@ -48,7 +51,7 @@ const PostView = (props: PostWithUser) => {
           <span>{`@${author.name}`}</span>
           <span className="font-thin">{` · ${dayjs(post.createdAt).fromNow()}`}</span>
         </div>
-      <span>{post.content}</span>
+      <span className="text-2xl">{post.content}</span>
       </div>
     </div>
 
@@ -73,7 +76,7 @@ const Feed = () => {
 
 export default function Home() {
   // const hello = api.post.hello.useQuery({ text: "from tRPC" });
-  const {user, isLoaded: userLoaded}  = useUser();
+  const {isLoaded: userLoaded, isSignedIn}  = useUser();
 
   // start fetching asap
   api.post.getAll.useQuery();
@@ -94,12 +97,22 @@ export default function Home() {
       <div className="h-full w-full border-x border-slate-400 md:max-w-2xl">
         
         <header className="flex w-full gap-3 border-b border-slate-400 p-4">
+          {!isSignedIn && (
+            <>
           <div className="flex justify-center">
             <UserButton />
-            </div>
-            <div className="flex flex-grow">
-            <input placeholder="Type some emojis!" className="min-w-0 flex-grow bg-transparent outline-none" style={{ minWidth: '150px' }}/>
-            </div>
+              </div>
+              <div><span>Sign in to post</span></div>
+              </>
+            )}
+          {isSignedIn && (
+            <>
+            <div className="flex justify-center">
+            <UserButton />
+              </div>
+              <CreatePostWizard />
+              </>
+            )}
         </header>
         <Feed />
         </div>
