@@ -8,6 +8,22 @@ const filterUserForClient = (user: User) => {
   return {id: user.id, name: user.username, profileImageUrl: user.imageUrl};
 };
 
+import { Ratelimit } from "@upstash/ratelimit"; // for deno: see above
+import { Redis } from "@upstash/redis"; // see below for cloudflare and fastly adapters
+
+// Create a new ratelimiter, that allows 10 requests per 10 seconds
+const ratelimit = new Ratelimit({
+  redis: Redis.fromEnv(),
+  limiter: Ratelimit.slidingWindow(10, "10 s"),
+  analytics: true,
+  /**
+   * Optional prefix for the keys used in redis. This is useful if you want to share a redis
+   * instance with other applications and want to avoid key collisions. The default prefix is
+   * "@upstash/ratelimit"
+   */
+  prefix: "@upstash/ratelimit",
+});
+
 export const postRouter = createTRPCRouter({
   // hello: publicProcedure
   //   .input(z.object({ text: z.string() }))
@@ -43,7 +59,7 @@ export const postRouter = createTRPCRouter({
   }),
 
   getAll: publicProcedure.query(async ({ ctx }) => {
-    const posts = await ctx.db.post.findMany({
+    const posts = await ctx.db?.post?.findMany({
       take: 100,
       orderBy: [
         {createdAt: "desc"}
