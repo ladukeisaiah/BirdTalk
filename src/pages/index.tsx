@@ -1,7 +1,5 @@
 import { SignIn, UserButton, useUser } from "@clerk/nextjs";
-import { Post } from "@prisma/client";
 import Head from "next/head";
-import Link from "next/link";
 import dayjs from "dayjs";
 import relativeTime from "dayjs/plugin/relativeTime";
 import { RouterOutputs, api } from "~/utils/api";
