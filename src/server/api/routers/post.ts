@@ -1,16 +1,52 @@
-import type { User } from "@clerk/nextjs/server";
 import { clerkClient } from "@clerk/nextjs/server";
 import { TRPCError } from "@trpc/server";
 import { z } from "zod";
+import { filterUserForClient } from "~/server/helpers/filterUserForClient";
 
 import { createTRPCRouter, privateProcedure, publicProcedure } from "~/server/api/trpc";
 
-const filterUserForClient = (user: User) => {
-  return {id: user.id, name: user.username, profileImageUrl: user.imageUrl};
-};
-
 import { Ratelimit } from "@upstash/ratelimit"; // for deno: see above
 import { Redis } from "@upstash/redis"; // see below for cloudflare and fastly adapters
+import { Post } from "@prisma/client";
+
+const addUserDataToPosts = async (posts: Post[]) => {
+  const userId = posts.map((post) => post.authorId);
+  const users = (
+    await clerkClient.users.getUserList({
+      userId: userId,
+      limit: 110,
+    })
+  ).map(filterUserForClient);
+
+  return posts.map((post) => {
+    const author = users.find((user) => user.id === post.authorId);
+
+    if (!author) {
+      console.error("AUTHOR NOT FOUND", post);
+      throw new TRPCError({
+        code: "INTERNAL_SERVER_ERROR",
+        message: `Author for post not found. POST ID: ${post.id}, USER ID: ${post.authorId}`,
+      });
+    }
+    if (!author.username) {
+      // user the ExternalUsername
+      if (!author.externalUsername) {
+        throw new TRPCError({
+          code: "INTERNAL_SERVER_ERROR",
+          message: `Author has no GitHub Account: ${author.id}`,
+        });
+      }
+      author.username = author.externalUsername;
+    }
+    return {
+      post,
+      author: {
+        ...author,
+        username: author.username ?? "(username not found)",
+      },
+    };
+  });
+};
 
 // Create a new ratelimiter, that allows 3 requests per 1 minute
 const ratelimit = new Ratelimit({
@@ -53,12 +89,6 @@ export const postRouter = createTRPCRouter({
     //   });
     // }),
 
-  getLatest: publicProcedure.query(({ ctx }) => {
-    return ctx.db.post.findFirst({
-      orderBy: { createdAt: "desc" },
-    });
-  }),
-
   getAll: publicProcedure.query(async ({ ctx }) => {
     const posts = await ctx.db?.post?.findMany({
       take: 100,
@@ -76,7 +106,7 @@ export const postRouter = createTRPCRouter({
     return posts.map(post => {
       const author = users.find((user) => user.id === post.authorId);
 
-      if (!author || !author.name)
+      if (!author || !author.username)
         throw new TRPCError({ 
           code: "INTERNAL_SERVER_ERROR",
           message: "Author for post not found",
@@ -87,7 +117,7 @@ export const postRouter = createTRPCRouter({
         post,
         author: {
           ...author,
-          name: author.name,
+          name: author.username,
         },
     }});
   }),
