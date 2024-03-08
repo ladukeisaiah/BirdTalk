@@ -1,4 +1,4 @@
-import { SignIn, UserButton, useUser } from "@clerk/nextjs";
+import { UserButton, useUser } from "@clerk/nextjs";
 import Head from "next/head";
 import dayjs from "dayjs";
 import relativeTime from "dayjs/plugin/relativeTime";
