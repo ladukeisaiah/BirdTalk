@@ -28,7 +28,7 @@ const addUserDataToPosts = async (posts: Post[]) => {
         message: `Author for post not found. POST ID: ${post.id}, USER ID: ${post.authorId}`,
       });
     }
-    if (!author.username) {
+    if (!author?.username) {
       // user the ExternalUsername
       if (!author.externalUsername) {
         throw new TRPCError({
